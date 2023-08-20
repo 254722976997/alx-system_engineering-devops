@@ -1,2 +1,1 @@
-#!/bin/bash
-non empty readme file.
+My non empty readme
