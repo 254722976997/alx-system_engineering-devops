@@ -1,24 +1,18 @@
 #!/usr/bin/python3
-"""
-Function retrieve & print the titles of top 10 hot posts in a subreddit.
-"""
-import requests
-
-
-headers = {"User-Agent": "MyCustomUserAgent/1.0"}
+"""Module for top ten task"""
 
 
 def top_ten(subreddit):
-    """
-    Function retrieve & print the titles of top 10 hot posts in a subreddit.
-    """
-    url = "https://www.reddit.com/r/{}/hot.json?limit=10".format(subreddit)
-    response = requests.get(url, allow_redirects=False, headers=headers)
+    """The function Queries the Reddit API and returns the top 10 hot posts
+    of the given subreddit"""
+    import requests
 
-    if response.status_code == 200:
-        data = response.json()
-
-        for post in data["data"]["children"]:
-            print(post["data"]["title"])
+    sub_info = requests.get("https://www.reddit.com/r/{}/hot.json?limit=10"
+                            .format(subreddit),
+                            headers={"User-Agent": "My-User-Agent"},
+                            allow_redirects=False)
+    if sub_info.status_code >= 300:
+        print('None')
     else:
-        print(None)
+        [print(child.get("data").get("title"))
+         for child in sub_info.json().get("data").get("children")]
