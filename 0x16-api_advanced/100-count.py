@@ -1,51 +1,58 @@
-#!/usr/bin/python3
+i#!/usr/bin/python3
 """
-This module prints sorted count of given keywords
+Module for count_words function
 """
 import requests
 
 
-def count_words(subreddit, word_list, counts={}, after=""):
+def count_words(subreddit, word_list, new_after='',
+                words_dict={}):
     """
-        Recursive function to query Reddit API for given subreddit
-        Prints sorted count of given keywords
+    A recursive function that queries the Reddit API,
+    parses the title of all hot articles, and prints a
+    sorted count of given keywords
     """
-    url = "https://api.reddit.com/r/{}?sort=hot".format(subreddit)
-    if after:
-        url = "{}&after={}".format(url, after)
-    headers = {'User-Agent': 'CustomClient/1.0'}
-    r = requests.get(url, headers=headers, allow_redirects=False)
-    if r.status_code != 200:
-        print_counts(counts)
-        return
-    r = r.json()
-    if 'data' in r:
-        data = r.get('data')
-        if not data.get('children'):
-            return hot_list
-        for post in data.get('children'):
-            for word in post.get('data').get('title').lower().split():
-                if word in word_list:
-                    if word in counts:
-                        counts[word] += 1
-                    else:
-                        counts[word] = 1
-        if not data.get('after'):
-            print_counts(counts)
-        else:
-            count_words(subreddit, word_list, counts, data.get('after'))
-    else:
-        print_counts(counts)
 
+    word_list = map(lambda x: x.lower(), word_list)
+    word_list = list(word_list)
 
-def print_counts(counts):
-    """
-        Sort and print values in counts
-    """
-    if not counts:
+    res = requests.get("https://www.reddit.com/r/{}/hot.json"
+                       .format(subreddit),
+                       headers={'User-Agent': 'Custom'},
+                       params={'after': new_after},
+                       allow_redirects=False)
+
+    if res.status_code != 200:
         return
-    rev_counts = {}
-    for key, value in counts.items():
-        rev_counts[value] = key
-    for key in sorted(rev_counts, reverse=True):
-        print("{}: {:d}".format(rev_counts[key], key))
+
+    try:
+        response = res.json().get('data', None)
+
+        if response is None:
+            return
+    except ValueError:
+        return
+
+    children = response.get('children', [])
+
+    for post in children:
+        title = post.get('data', {}).get('title', '')
+        for key_word in word_list:
+            for word in title.lower().split():
+                if key_word == word:
+                    words_dict[key_word] = words_dict.get(key_word, 0) + 1
+
+    new_after = response.get('after', None)
+
+    if new_after is None:
+        sorted_dict = sorted(words_dict.items(),
+                             key=lambda x: x[1],
+                             reverse=True)
+
+        for i in sorted_dict:
+            if i[1] != 0:
+                print("{}: {}".format(i[0], i[1]))
+        return
+
+    return count_words(subreddit, word_list,
+                       new_after, words_dict)
